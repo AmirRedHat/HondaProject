@@ -42,6 +42,7 @@ async def updateZipCode(code: str, zip_code: ZipCode):
 @app.get("/offers")
 async def getOffers(request: Request):
    args = request.query_params
+   print(args.keys())
    with OffersModel() as offer:
       results = offer.get_offers(args)
       return results

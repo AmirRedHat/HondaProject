@@ -175,10 +175,3 @@ class OffersModel:
         """
         x = self.collection.delete_many(_filter)
         print(x.deleted_count, " records deleted !")
-
-
-if __name__ == "__main__":
-    with OffersModel() as offer:
-        x = offer.get_offers()
-        print(x[0].keys())
-        # offer.update_offers(x, {"zip_code": "97230"})
