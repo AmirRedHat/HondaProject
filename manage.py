@@ -123,5 +123,10 @@ elif args.command == "process-zip-codes":
     processZipCodes()
 
 elif args.command == "process-offers":
-    processOffers(97230, mode="save")
+    zip_code = args.zip_code
+    processOffers(zip_code, mode="save")
+
+elif args.command == "get-offers":
+    zip_code = args.zip_code
+    print(getOffers(zip_code))
 
