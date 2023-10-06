@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, parse_obj_as
+from typing import List
+from datetime import datetime
 
 
 
@@ -11,4 +13,6 @@ class ZipCode(BaseModel):
 # create a read class for syncing with database fields and 
 # filter some importatnt fields (security issues!)
 class ZipCodeRead(ZipCode):
-   id: int
+   pass
+
+

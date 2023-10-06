@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="fecb2b57-487f-4fff-8154-5e263e6fa0c4" name="Kernel">
+        <fileTransfer rootFolder="/root/amir/kernel" accessType="SFTP" host="154.91.170.231" port="22" sshConfigId="a52ce803-c77f-42cb-a929-7e825b4f8a04" sshConfig="root@154.91.170.231:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="298e7c81-6209-4f2b-83d8-bc6ca0977622" name="IR Server">
+        <fileTransfer rootFolder="/home/aitrade2/amir" accessType="SFTP" host="2.180.11.174" port="4423" sshConfigId="076d6860-eeac-41a2-88ff-36f2ff005fae" sshConfig="aitrade2@2.180.11.174:4423 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

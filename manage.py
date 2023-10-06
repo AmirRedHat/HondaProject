@@ -1,10 +1,9 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
-from time import sleep
+from time import sleep, time
 from concurrent.futures import ThreadPoolExecutor
-from db import ZipCodeModel, initialize_session
+from db import ZipCodeModel, initialize_session, OffersModel
 from schema import ZipCode
-from db import OffersModel
 from events import getZipCodeEvent, saveZipCodeEvent
 import requests
 import argparse
@@ -36,36 +35,37 @@ def getOffers(zip_code: str) -> dict:
     return response.json()
 
 
-def saveOrUpdateOffers(offers: list, zip_code: str = "", **kwargs):
+def filterOfferKeys(offer):
+    keys = [c.name for c in OffersModel.__table__.columns]
+    new_offer = dict()
+    for key in keys:
+        try:
+            new_offer[key] = offer[key]
+        except KeyError as err:
+            continue
+
+    return new_offer
+
+def saveOrUpdateOffers(offers: list, zip_code: int, **kwargs):
     """
         save or update list of offers in mongodb
         if event of last update is exists then update offers
-        :param zip_code = valid zip_codes that saved in postgreql db
     """
-    with OffersModel() as offer:
-        zip_code_last_update = getZipCodeEvent(zip_code, **kwargs)
-        if not zip_code or not zip_code_last_update:
-            offer.save_offers(offers)
-        else:
-            offer.update_offers(offers, {"zip_code": zip_code})
-
-        saveZipCodeEvent(zip_code, **kwargs)
+    offer_objects = [OffersModel(**filterOfferKeys(offer)) for offer in offers]
+    OffersModel.bulk_save(offer_objects, zip_code=zip_code)
 
 
-def processOffers(zip_code: str, **kwargs):
+def processOffers(zip_code: int, **kwargs):
     """
         get offers from api endpoint (by zip_code) and process data then save them in mongodb 
         :param zip_code = valid zip_codes that saved in postgreql db
     """
-    zip_code = str(zip_code)
+    zip_code = int(zip_code)
+    get_offer_time = time()
     offers = getOffers(zip_code)["Offers"]
+    print("%s offers fetched from website at %s seconds" % (len(offers), time()-get_offer_time))
     # create dataframe for add zip_code and created_at and tab columns to dataset
-    df = pd.DataFrame(offers)
-    df["zip_code"] = zip_code
-    df["created_at"] = datetime.now()
-    df["tab"] = df["SalesProgramType"].apply(lambda x: "Special Program" if x in ["AcuraLoyaltyAppreciation", "AcuraConquest"] else x)
-    df.fillna("", inplace=True)
-    offers = df.to_dict("records")
+    [offer.update({"zip_code_id": zip_code, "created_at": datetime.now(), "tab": "Special Program" if offer["SalesProgramType"] in ["AcuraLoyaltyAppreciation", "AcuraConquest"] else offer["SalesProgramType"]}) for offer in offers]
     saveOrUpdateOffers(offers, zip_code, **kwargs)
     print("process of storing offers done !")
 
@@ -87,16 +87,18 @@ def processZipCodes():
         get zip_codes from database (postsgresql) 
         and process them by processOffers function using multi-threading pool method
     """
-    zip_codes = ZipCodeModel.get_zip_codes(read_fields=("code",))
+    # TODO : read_fields must be remove because its not safe
+    zip_codes = ZipCodeModel.get_zip_codes()
+    print("%s zip_codes found" % len(zip_codes))
     max_workers = MAX_THREAD
     if len(zip_codes) < max_workers:
         max_workers = len(zip_codes)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for zip_code in zip_codes:
-            executor.submit(processOffers, zip_code[0])
+            executor.submit(processOffers, zip_code.code)
 
-    logger("%s zip_code offers saved !" % len(zip_code))
+    logger("%s zip_code offers saved !" % len(zip_codes))
 
 
 def scheduler():
@@ -123,10 +125,17 @@ elif args.command == "process-zip-codes":
     processZipCodes()
 
 elif args.command == "process-offers":
+    start_time = time()
     zip_code = args.zip_code
-    processOffers(zip_code, mode="save")
+    processOffers(zip_code)
+    print("duration of process-offers: ", time()-start_time)
 
 elif args.command == "get-offers":
     zip_code = args.zip_code
     print(getOffers(zip_code))
+
+elif args.command == "test":
+    cs = OffersModel.__table__.columns
+    k = [[c.name, c.primary_key] for c in cs if not c.primary_key]
+    print(k)
 

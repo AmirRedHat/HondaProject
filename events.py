@@ -2,7 +2,6 @@ from redis import Redis
 from time import time
 
 
-
 def createKeyEvent(zip_code: str) -> str:
     return "%s__last_update" % zip_code
 
